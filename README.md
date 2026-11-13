@@ -1,12 +1,14 @@
-# mruby-cr
+# mrb.cr
 
 > Thin, explicit Crystal bindings for [mruby](https://mruby.org/).
+
+Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 
 **Status: design phase.** The repository currently contains the project
 skeleton, design notes, and implementation plan. It does not link mruby yet and
 is not ready for production use.
 
-`mruby-cr` is a from-scratch binding intended to be smaller and more predictable
+`mrb.cr` is a from-scratch binding intended to be smaller and more predictable
 than a general-purpose Ruby bridge:
 
 - mruby 4.x only, no MRI/CRuby support.
@@ -34,7 +36,7 @@ The goal is to make mruby predictable to embed from Crystal.
 ## Planned API
 
 ```crystal
-require "mruby-cr"
+require "mrb"
 
 MRuby::State.open do |mrb|
   result = mrb.eval("1 + 2")

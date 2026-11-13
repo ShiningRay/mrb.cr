@@ -8,7 +8,7 @@ Crystal has no mature, narrow binding to mruby 4.x. Existing options are either
 broad bridges with significant macro machinery, incomplete generated bindings,
 or tied to older mruby versions.
 
-`mruby-cr` is a from-scratch binding for applications that need:
+`mrb.cr` is a from-scratch binding for applications that need:
 
 - mruby as an embedded script runtime;
 - explicit control over interpreter lifetime;
@@ -293,7 +293,7 @@ it supports mruby and MRI, macro-based wrapping, and an extensive bridge. It is
 also tied to mruby 3.3.0, has a singleton interpreter, and its error path is not
 transparent enough for a host runtime.
 
-`mruby-cr` does less, but with explicit ownership, mruby 4.x, and a small audit
+`mrb.cr` does less, but with explicit ownership, mruby 4.x, and a small audit
 surface.
 
 ### mruby.cr
@@ -308,7 +308,7 @@ lifetime rules. A small shared binding is worth the abstraction.
 
 ### Process-isolated mruby only
 
-A process boundary is still required for untrusted scripts. `mruby-cr` is the
+A process boundary is still required for untrusted scripts. `mrb.cr` is the
 in-host binding used inside that process, not a replacement for process
 isolation.
 

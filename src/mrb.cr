@@ -1,4 +1,4 @@
-require "./mruby_cr/version"
+require "./mrb/version"
 
 # Crystal bindings for the mruby C API.
 #

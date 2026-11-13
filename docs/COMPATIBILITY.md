@@ -57,7 +57,7 @@ explicit future API.
 
 ## Security boundary
 
-`mruby-cr` is a language binding. It does not isolate scripts, enforce CPU or
+`mrb.cr` is a language binding. It does not isolate scripts, enforce CPU or
 memory limits, or restrict the mruby API surface by itself. Hosts must provide:
 
 - process or container isolation;
