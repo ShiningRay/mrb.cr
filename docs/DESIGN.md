@@ -1,6 +1,7 @@
 # Design
 
-> Status: design phase. Nothing in this document is implemented unless stated.
+> Status: M1 implemented (state, values, errors). Other sections describe
+> the target contract; check the plan for milestone status.
 
 ## Problem
 
@@ -130,6 +131,8 @@ MRuby::State.open do |mrb|
 end
 ```
 
+`State#eval` is the convenience entry point; `State#load_string` is an alias.
+
 `State.open` closes the state even when the block raises. `State#close` is
 idempotent.
 
@@ -139,7 +142,7 @@ idempotent.
 
 Capabilities:
 
-- `nil?`, `true?`, `false?`, `bool?`
+- `is_nil?` (Crystal reserves `nil?`), `true?`, `false?`, `bool?`
 - `as_i64`, `as_f64`, `as_s`, `as_bool`
 - `as_array`, `as_hash`
 - `type_name`

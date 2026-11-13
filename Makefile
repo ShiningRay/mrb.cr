@@ -16,16 +16,22 @@ MRUBY_REPO    ?= https://github.com/mruby/mruby.git
 MRUBY_DIR     ?= vendor/mruby
 MRUBY_BUILD   ?= host
 RUBY          ?= ruby
+CC            ?= cc
+CFLAGS        ?= -O2 -fPIC
 JOBS          ?= 4
 
 MRUBY_STAMP := $(MRUBY_DIR)/.mrb-cr-$(MRUBY_VERSION)
+MRUBY_INC   := $(MRUBY_DIR)/include
+MRUBY_BUILD_INC := $(MRUBY_DIR)/build/$(MRUBY_BUILD)/include
 MRUBY_LIB   := $(MRUBY_DIR)/build/$(MRUBY_BUILD)/lib/libmruby.a
 LIB_DIR     := lib
 DEST_LIB    := $(LIB_DIR)/libmruby.a
+SHIM_SRC    := src/mrb/shim.c
+SHIM_OBJ    := $(LIB_DIR)/mrb_shim.o
 
 .PHONY: all mruby clean distclean check
 
-all: $(DEST_LIB)
+all: $(DEST_LIB) $(SHIM_OBJ)
 
 $(MRUBY_STAMP):
 	@mkdir -p $(dir $(MRUBY_DIR))
@@ -45,12 +51,16 @@ $(DEST_LIB): $(MRUBY_LIB)
 	@mkdir -p $(LIB_DIR)
 	cp $(MRUBY_LIB) $(DEST_LIB)
 
-check: $(DEST_LIB)
+$(SHIM_OBJ): $(SHIM_SRC) $(MRUBY_LIB)
+	@mkdir -p $(LIB_DIR)
+	$(CC) $(CFLAGS) -I$(MRUBY_INC) -I$(MRUBY_BUILD_INC) -c $(SHIM_SRC) -o $(SHIM_OBJ)
+
+check: $(DEST_LIB) $(SHIM_OBJ)
 	crystal tool format --check
 	crystal spec
 
 clean:
-	rm -f $(DEST_LIB)
+	rm -f $(DEST_LIB) $(SHIM_OBJ)
 	rm -rf $(MRUBY_DIR)/build
 
 distclean: clean

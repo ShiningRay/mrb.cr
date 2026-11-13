@@ -1,6 +1,7 @@
 require "./mrb/version"
 require "./mrb/lib_mruby"
 require "./mrb/error"
+require "./mrb/value"
 require "./mrb/state"
 
 # Crystal bindings for the mruby C API.
