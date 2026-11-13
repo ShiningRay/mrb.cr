@@ -6,3 +6,4 @@
 /docs/site/
 .DS_Store
 *.dwarf
+build_config/*.lock

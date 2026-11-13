@@ -37,4 +37,11 @@ lib LibMRuby
   fun mrb_cr_exception(mrb : Void*) : MrbValue
   fun mrb_cr_clear_exception(mrb : Void*) : Void
   fun mrb_cr_exception_message(mrb : Void*, exc : MrbValue) : MrbValue
+
+  fun mrb_cr_arena_save(mrb : Void*) : Int32
+  fun mrb_cr_arena_restore(mrb : Void*, index : Int32) : Void
+  fun mrb_cr_gc_register(mrb : Void*, value : MrbValue) : Void
+  fun mrb_cr_gc_unregister(mrb : Void*, value : MrbValue) : Void
+  fun mrb_cr_gc_full(mrb : Void*) : Void
+  fun mrb_cr_live_objects(mrb : Void*) : Int64
 end

@@ -4,10 +4,11 @@
 
 Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 
-**Status: implementation in progress (M1).** The binding links mruby 4.0.0,
-evaluates source, converts JSON-like values, and raises structured errors.
-GC references, host callbacks, file loading, and release hardening are still
-being implemented; do not use this in production yet.
+**Status: implementation in progress (M2).** The binding links mruby 4.0.0,
+evaluates source, converts JSON-like values, raises structured errors, and
+supports GC arenas and long-lived references. Host callbacks, file loading, and
+release hardening are still being implemented; do not use this in production
+yet.
 
 `mrb.cr` is a from-scratch binding intended to be smaller and more predictable
 than a general-purpose Ruby bridge:

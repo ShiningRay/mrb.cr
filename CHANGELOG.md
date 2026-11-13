@@ -12,3 +12,9 @@
 - Structured `MRuby::Error` with script class and message; parser diagnostics
   are captured instead of printed.
 - Deterministic `MRuby::StateClosedError` for use after close.
+- `MRuby::Arena` / `State#arena` GC arena save/restore with exception safety
+  (M2).
+- `MRuby::Ref` long-lived GC references with idempotent release and a block
+  form.
+- Diagnostic `State#gc_full` and `State#live_object_count` helpers with
+  bounded-allocation stress coverage.

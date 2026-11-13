@@ -197,3 +197,39 @@ mrb_cr_exception_message(mrb_state *mrb, mrb_value exc)
   }
   return message;
 }
+
+int
+mrb_cr_arena_save(mrb_state *mrb)
+{
+  return mrb_gc_arena_save(mrb);
+}
+
+void
+mrb_cr_arena_restore(mrb_state *mrb, int index)
+{
+  mrb_gc_arena_restore(mrb, index);
+}
+
+void
+mrb_cr_gc_register(mrb_state *mrb, mrb_value value)
+{
+  mrb_gc_register(mrb, value);
+}
+
+void
+mrb_cr_gc_unregister(mrb_state *mrb, mrb_value value)
+{
+  mrb_gc_unregister(mrb, value);
+}
+
+void
+mrb_cr_gc_full(mrb_state *mrb)
+{
+  mrb_full_gc(mrb);
+}
+
+int64_t
+mrb_cr_live_objects(mrb_state *mrb)
+{
+  return (int64_t)mrb->gc.live;
+}

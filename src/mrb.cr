@@ -3,6 +3,8 @@ require "./mrb/lib_mruby"
 require "./mrb/error"
 require "./mrb/value"
 require "./mrb/state"
+require "./mrb/ref"
+require "./mrb/arena"
 
 # Crystal bindings for the mruby C API.
 #

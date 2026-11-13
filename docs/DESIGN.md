@@ -1,7 +1,7 @@
 # Design
 
-> Status: M1 implemented (state, values, errors). Other sections describe
-> the target contract; check the plan for milestone status.
+> Status: M1 and M2 implemented (state, values, errors, arena, refs). Other
+> sections describe the target contract; check the plan for milestone status.
 
 ## Problem
 

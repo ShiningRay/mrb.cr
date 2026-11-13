@@ -1,5 +1,8 @@
 # mruby build configuration for mrb.cr.
 #
+# Pinned upstream commit for mruby 4.0.0:
+#   831da26b9021de0369d17b71b5667e2941a1a32d
+#
 # Only the interpreter core and the compiler are required by the binding.
 # Host applications that need more (IO, sockets, time) should build their own
 # gembox; this configuration keeps the linked surface small and auditable.

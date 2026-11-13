@@ -50,6 +50,37 @@ module MRuby
       eval(code)
     end
 
+    # Runs the block inside a GC arena and restores the arena on exit.
+    #
+    # Values created inside the block are protected only until it returns.
+    # Use `#ref` for values that must outlive the arena.
+    def arena(&)
+      ensure_open!
+      index = LibMRuby.mrb_cr_arena_save(@raw)
+      begin
+        yield
+      ensure
+        LibMRuby.mrb_cr_arena_restore(@raw, index)
+      end
+    end
+
+    # Registers a value with mruby's GC. See `Ref`.
+    def ref(value : Value) : Ref
+      value.ref
+    end
+
+    # Forces a full mruby GC. Diagnostic and test helper.
+    def gc_full : Nil
+      ensure_open!
+      LibMRuby.mrb_cr_gc_full(@raw)
+    end
+
+    # Number of live mruby objects. Diagnostic and test helper.
+    def live_object_count : Int64
+      ensure_open!
+      LibMRuby.mrb_cr_live_objects(@raw)
+    end
+
     def ensure_open! : Nil
       raise StateClosedError.new if @closed
     end

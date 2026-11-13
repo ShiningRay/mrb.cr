@@ -189,6 +189,13 @@ module MRuby
       Converter.new(max_depth, max_nodes).convert(self, 0)
     end
 
+    # Registers this value with mruby's GC so it survives arena restoration
+    # and GC cycles until the returned `Ref` is released.
+    def ref : Ref
+      ensure_open!
+      Ref.new(state, @raw)
+    end
+
     def inspect(io : IO) : Nil
       to_crystal.inspect(io)
     rescue ex : Error
