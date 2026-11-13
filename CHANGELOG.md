@@ -4,4 +4,5 @@
 
 - Repository scaffold.
 - Initial design and implementation plan.
-- Version module only; no mruby linkage yet.
+- Link mruby 4.0.0 as a pinned static library (M0).
+- Minimal `MRuby::State` open/close lifecycle with block cleanup.

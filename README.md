@@ -4,9 +4,9 @@
 
 Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 
-**Status: design phase.** The repository currently contains the project
-skeleton, design notes, and implementation plan. It does not link mruby yet and
-is not ready for production use.
+**Status: implementation in progress (M0).** The binding links mruby 4.0.0 and
+opens/closes an interpreter state. The evaluation API, value conversion, and
+callbacks are still being implemented; do not use this in production yet.
 
 `mrb.cr` is a from-scratch binding intended to be smaller and more predictable
 than a general-purpose Ruby bridge:
@@ -98,12 +98,39 @@ contract.
 
 ## Development
 
+### Prerequisites
+
+- Crystal >= 1.10
+- Ruby >= 3.0 with Rake (build time only)
+- a C toolchain (clang or gcc)
+- `bison` and `gperf`
+- `git`
+
+### Build
+
 ```bash
-crystal spec
-crystal tool format --check
+make
 ```
 
-mruby is not linked yet. The build integration starts in M0.
+The Makefile clones mruby **4.0.0** into `vendor/mruby`, builds it with
+[`build_config/mrb_cr.rb`](build_config/mrb_cr.rb) (core, compiler, and error
+gems only), and copies `libmruby.a` to `lib/`. The gembox intentionally excludes
+IO, sockets, and the standard library extensions; hosts that need more should
+build their own gembox.
+
+`mrb.cr` links the static library. Ruby and Rake are not required at runtime.
+
+Set `RUBY` if the default `ruby` on `PATH` is older than 3.0:
+
+```bash
+make RUBY=/path/to/ruby
+```
+
+### Verify
+
+```bash
+make check
+```
 
 ## License
 

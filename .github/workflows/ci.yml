@@ -7,14 +7,29 @@ on:
 
 jobs:
   spec:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: oprypin/install-crystal@v1
         with:
           crystal: latest
-      - name: Install dependencies
-        run: shards install
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - name: Install mruby build dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y bison gperf
+      - name: Install mruby build dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install bison gperf
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+      - name: Build libmruby
+        run: make
       - name: Format check
         run: crystal tool format --check
       - name: Specs
