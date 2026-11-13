@@ -1,0 +1,11 @@
+name: mruby-cr
+version: 0.1.0
+
+authors:
+  - ShiningRay
+
+description: |
+  A thin, explicit Crystal binding to mruby 4.x for embedding scripts safely.
+
+license: MIT
+crystal: ">= 1.10.0"
