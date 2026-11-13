@@ -9,7 +9,10 @@
 #include <mruby/compile.h>
 #include <mruby/error.h>
 #include <mruby/hash.h>
+#include <mruby/irep.h>
+#include <mruby/internal.h>
 #include <mruby/object.h>
+#include <mruby/proc.h>
 #include <mruby/string.h>
 #include <mruby/variable.h>
 #include <stdint.h>
@@ -420,4 +423,95 @@ mrb_value
 mrb_cr_string_value(mrb_state *mrb, const char *ptr, size_t len)
 {
   return mrb_str_new(mrb, ptr, len);
+}
+
+/* Bytecode --------------------------------------------------------------- */
+
+mrb_bool
+mrb_cr_compile_irep(mrb_state *mrb, const char *code, size_t len,
+                    const char *filename, const uint8_t **bin, size_t *bin_len)
+{
+  mrb_ccontext *cxt = mrb_ccontext_new(mrb);
+  struct mrb_parser_state *parser;
+  struct RProc *proc;
+  uint8_t *output = NULL;
+  size_t output_len = 0;
+  int dump_result;
+
+  cxt->capture_errors = TRUE;
+  mrb_ccontext_filename(mrb, cxt, filename);
+
+  parser = mrb_parse_nstring(mrb, code, len, cxt);
+  if (parser == NULL || parser->tree == NULL || parser->nerr > 0) {
+    if (parser != NULL) {
+      if (parser->nerr > 0) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "line %d: %s",
+                 parser->error_buffer[0].lineno,
+                 parser->error_buffer[0].message);
+        mrb->exc = mrb_obj_ptr(mrb_exc_new(mrb, E_SYNTAX_ERROR, buf, strlen(buf)));
+      }
+      mrb_parser_free(parser);
+    }
+    mrb_ccontext_free(mrb, cxt);
+    return FALSE;
+  }
+
+  proc = mrb_generate_code(mrb, parser);
+  mrb_parser_free(parser);
+  mrb_ccontext_free(mrb, cxt);
+  if (proc == NULL) {
+    return FALSE;
+  }
+
+  dump_result = mrb_dump_irep(mrb, proc->body.irep, 0, &output, &output_len);
+  if (dump_result != 0) {
+    return FALSE;
+  }
+
+  *bin = output;
+  *bin_len = output_len;
+  return TRUE;
+}
+
+void
+mrb_cr_free_bin(mrb_state *mrb, void *bin)
+{
+  mrb_free(mrb, bin);
+}
+
+struct mrb_cr_irep_args {
+  const uint8_t *data;
+  size_t len;
+  mrb_ccontext *cxt;
+};
+
+static mrb_value
+mrb_cr_load_irep_body(mrb_state *mrb, mrb_value data)
+{
+  struct mrb_cr_irep_args *args = (struct mrb_cr_irep_args *)mrb_cptr(data);
+  return mrb_load_irep_buf_cxt(mrb, args->data, args->len, args->cxt);
+}
+
+mrb_value
+mrb_cr_load_irep(mrb_state *mrb, const uint8_t *data, size_t len,
+                 const char *filename, mrb_bool *error)
+{
+  struct mrb_cr_irep_args args;
+  mrb_ccontext *cxt = mrb_ccontext_new(mrb);
+  mrb_value result;
+
+  cxt->capture_errors = TRUE;
+  mrb_ccontext_filename(mrb, cxt, filename);
+
+  args.data = data;
+  args.len = len;
+  args.cxt = cxt;
+  result = mrb_protect(mrb, mrb_cr_load_irep_body, mrb_cptr_value(mrb, &args), error);
+  mrb_ccontext_free(mrb, cxt);
+
+  if (!*error && mrb->exc != NULL) {
+    *error = TRUE;
+  }
+  return result;
 }

@@ -59,16 +59,63 @@ module MRuby
     #
     # Raises `MRuby::Error` for parser errors and script exceptions.
     def eval(code : String) : Value
-      ensure_open!
-      error = false
-      raw = LibMRuby.mrb_cr_eval(@raw, code.to_unsafe, code.bytesize.to_u64, "(eval)", pointerof(error))
-      raise_last_error if error
-      Value.new(self, raw)
+      eval_with_filename(code, "(eval)")
     end
 
     # Evaluates Ruby source. Alias for `#eval`.
     def load_string(code : String) : Value
       eval(code)
+    end
+
+    # Reads and evaluates a Ruby file. Errors report the file path and line.
+    def load_file(path : String) : Value
+      ensure_open!
+      source = File.read(path)
+      eval_with_filename(source, path)
+    rescue ex : IO::Error
+      raise Error.new("failed to read script '#{path}': #{ex.message}", script_file: path)
+    end
+
+    # Compiles Ruby source into mruby bytecode (RITE format).
+    def compile(code : String, filename : String = "(compile)") : Bytes
+      ensure_open!
+      bin = Pointer(UInt8).null
+      bin_len = 0_u64
+      ok = LibMRuby.mrb_cr_compile_irep(@raw, code.to_unsafe, code.bytesize.to_u64,
+        filename.to_unsafe, pointerof(bin), pointerof(bin_len))
+
+      unless ok
+        if LibMRuby.mrb_cr_has_exception(@raw)
+          raise_last_error(filename)
+        else
+          raise Error.new("failed to compile source", script_file: filename)
+        end
+      end
+
+      begin
+        Slice.new(bin, bin_len.to_i).dup
+      ensure
+        LibMRuby.mrb_cr_free_bin(@raw, bin)
+      end
+    end
+
+    # Loads mruby bytecode produced by `#compile` or `mrbc`.
+    def load_irep(data : Bytes, filename : String = "(irep)") : Value
+      ensure_open!
+      error = false
+      raw = LibMRuby.mrb_cr_load_irep(@raw, data.to_unsafe, data.size.to_u64,
+        filename.to_unsafe, pointerof(error))
+      raise_last_error(filename) if error
+      Value.new(self, raw)
+    end
+
+    private def eval_with_filename(code : String, filename : String) : Value
+      ensure_open!
+      error = false
+      raw = LibMRuby.mrb_cr_eval(@raw, code.to_unsafe, code.bytesize.to_u64,
+        filename.to_unsafe, pointerof(error))
+      raise_last_error(filename) if error
+      Value.new(self, raw)
     end
 
     # Runs the block inside a GC arena and restores the arena on exit.
@@ -270,7 +317,7 @@ module MRuby
       end
     end
 
-    private def raise_last_error : NoReturn
+    private def raise_last_error(filename : String = "(eval)") : NoReturn
       exception = LibMRuby.mrb_cr_exception(@raw)
       class_pointer = LibMRuby.mrb_cr_class_name(@raw, exception)
       class_name = class_pointer.null? ? nil : String.new(class_pointer)
@@ -285,16 +332,19 @@ module MRuby
                 end
 
       LibMRuby.mrb_cr_clear_exception(@raw)
-      file, line = parse_location(message)
+      file, line = parse_location(message, filename)
       raise Error.new(message, script_class: class_name, script_file: file, script_line: line)
     end
 
-    # mruby prefixes parser errors with "<file>:<line>:<column>: ".
-    private def parse_location(message : String) : {String?, Int32?}
-      if match = message.match(/\A(.*):(\d+):(\d+): /)
+    # mruby reports captured parser errors as "line N: ..." and some errors
+    # as "<file>:<line>:<column>: ...".
+    private def parse_location(message : String, filename : String) : {String?, Int32?}
+      if match = message.match(/\Aline (\d+): /)
+        {filename, match[1].to_i32}
+      elsif match = message.match(/\A(.*):(\d+):(\d+): /)
         {match[1], match[2].to_i32}
       else
-        {nil, nil}
+        {filename, nil}
       end
     end
   end

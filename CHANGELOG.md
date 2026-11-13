@@ -23,3 +23,7 @@
 - `MRuby::Args` with explicit arity checking and a single C trampoline.
 - Crystal exceptions and argument errors are translated into mruby
   `RuntimeError` / `ArgumentError` with stable messages.
+- `State#load_file` with file and line reporting for script errors (M4).
+- `State#compile` and `State#load_irep` for RITE bytecode.
+- Examples for calculator, host callbacks, and JSON-like value conversion,
+  plus an embedding guide and `make examples`.

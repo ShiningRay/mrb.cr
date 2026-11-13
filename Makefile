@@ -29,7 +29,7 @@ DEST_LIB    := $(LIB_DIR)/libmruby.a
 SHIM_SRC    := src/mrb/shim.c
 SHIM_OBJ    := $(LIB_DIR)/mrb_shim.o
 
-.PHONY: all mruby clean distclean check
+.PHONY: all mruby clean distclean check examples
 
 all: $(DEST_LIB) $(SHIM_OBJ)
 
@@ -58,6 +58,11 @@ $(SHIM_OBJ): $(SHIM_SRC) $(MRUBY_LIB)
 check: $(DEST_LIB) $(SHIM_OBJ)
 	crystal tool format --check
 	crystal spec
+
+examples: $(DEST_LIB) $(SHIM_OBJ)
+	crystal run examples/calculator.cr
+	crystal run examples/host_callback.cr
+	crystal run examples/json_values.cr
 
 clean:
 	rm -f $(DEST_LIB) $(SHIM_OBJ)

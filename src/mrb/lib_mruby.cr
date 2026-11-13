@@ -76,4 +76,8 @@ lib LibMRuby
   fun mrb_cr_integer_value(mrb : Void*, value : Int64) : MrbValue
   fun mrb_cr_float_value(mrb : Void*, value : Float64) : MrbValue
   fun mrb_cr_string_value(mrb : Void*, ptr : UInt8*, len : LibC::SizeT) : MrbValue
+
+  fun mrb_cr_compile_irep(mrb : Void*, code : UInt8*, len : LibC::SizeT, filename : UInt8*, bin : UInt8**, bin_len : LibC::SizeT*) : Bool
+  fun mrb_cr_free_bin(mrb : Void*, bin : Void*) : Void
+  fun mrb_cr_load_irep(mrb : Void*, data : UInt8*, len : LibC::SizeT, filename : UInt8*, error : Bool*) : MrbValue
 end

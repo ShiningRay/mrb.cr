@@ -34,3 +34,5 @@ jobs:
         run: crystal tool format --check
       - name: Specs
         run: crystal spec
+      - name: Examples
+        run: make examples
