@@ -196,6 +196,8 @@ module MRuby
       Ref.new(state, @raw)
     end
 
+    # Renders the JSON-like value, or a placeholder for unsupported or closed
+    # values.
     def inspect(io : IO) : Nil
       to_crystal.inspect(io)
     rescue ex : Error

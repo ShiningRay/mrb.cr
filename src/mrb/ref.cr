@@ -26,6 +26,7 @@ module MRuby
       end
     end
 
+    # Returns `true` after `#release` has run.
     def released? : Bool
       @released
     end

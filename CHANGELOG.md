@@ -27,3 +27,9 @@
 - `State#compile` and `State#load_irep` for RITE bytecode.
 - Examples for calculator, host callbacks, and JSON-like value conversion,
   plus an embedding guide and `make examples`.
+- Hardening (M5): malformed source and bytecode fuzz specs, UTF-8 source
+  validation, ASAN build target, and conversion limit coverage.
+- Release-mode benchmarks (`make bench`) and recorded reference numbers.
+- Windows build script and platform-specific link names; Windows remains
+  unverified.
+- Compatibility matrix updated to distinguish tested and CI-configured targets.

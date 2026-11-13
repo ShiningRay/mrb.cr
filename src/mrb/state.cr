@@ -43,10 +43,14 @@ module MRuby
       @@registry[@raw] = self
     end
 
+    # Returns `true` after the state has been closed.
     def closed? : Bool
       @closed
     end
 
+    # Closes the state and drops host callback registrations.
+    #
+    # Idempotent. Values and refs created from this state become invalid.
     def close
       return if @closed
       @methods.clear
@@ -79,6 +83,9 @@ module MRuby
     # Compiles Ruby source into mruby bytecode (RITE format).
     def compile(code : String, filename : String = "(compile)") : Bytes
       ensure_open!
+      unless code.valid_encoding?
+        raise Error.new("source is not valid UTF-8", script_file: filename)
+      end
       bin = Pointer(UInt8).null
       bin_len = 0_u64
       ok = LibMRuby.mrb_cr_compile_irep(@raw, code.to_unsafe, code.bytesize.to_u64,
@@ -111,6 +118,9 @@ module MRuby
 
     private def eval_with_filename(code : String, filename : String) : Value
       ensure_open!
+      unless code.valid_encoding?
+        raise Error.new("source is not valid UTF-8", script_file: filename)
+      end
       error = false
       raw = LibMRuby.mrb_cr_eval(@raw, code.to_unsafe, code.bytesize.to_u64,
         filename.to_unsafe, pointerof(error))
@@ -251,6 +261,7 @@ module MRuby
       end
     end
 
+    # Internal: raises `StateClosedError` when the state is closed.
     def ensure_open! : Nil
       raise StateClosedError.new if @closed
     end
@@ -332,6 +343,7 @@ module MRuby
                 end
 
       LibMRuby.mrb_cr_clear_exception(@raw)
+      message = message.scrub
       file, line = parse_location(message, filename)
       raise Error.new(message, script_class: class_name, script_file: file, script_line: line)
     end

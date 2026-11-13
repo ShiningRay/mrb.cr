@@ -4,12 +4,12 @@
 
 Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 
-**Status: implementation in progress (M4).** The binding links mruby 4.0.0,
+**Status: implementation in progress (M5).** The binding links mruby 4.0.0,
 evaluates source and files, converts JSON-like values, raises structured
 errors, supports GC arenas and long-lived references, registers host classes,
-modules, methods, and constants, and loads RITE bytecode. Release hardening and
-the cross-platform matrix are still in progress; do not use this in production
-yet.
+modules, methods, and constants, and loads RITE bytecode. Hardening covers
+malformed input, ASAN, and benchmarks; Windows remains unverified. Do not use
+this in production yet.
 
 `mrb.cr` is a from-scratch binding intended to be smaller and more predictable
 than a general-purpose Ruby bridge:
@@ -99,6 +99,7 @@ See the design and plan for the exact contract.
 - [Implementation plan](docs/PLAN.md)
 - [Compatibility notes](docs/COMPATIBILITY.md)
 - [Embedding guide](docs/EMBEDDING.md)
+- [Benchmarks](docs/BENCHMARKS.md)
 
 ## Development
 
@@ -133,8 +134,13 @@ make RUBY=/path/to/ruby
 ### Verify
 
 ```bash
-make check
+make check        # format check and specs
+make examples     # run the example programs
+make bench        # release-mode benchmarks
+make asan         # rebuild with AddressSanitizer and run specs
 ```
+
+`make asan` replaces the normal build. Run `make clean && make` afterwards.
 
 ## License
 

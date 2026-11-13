@@ -77,8 +77,12 @@ should encode these rules.
 
 ### Thin C layer, no hidden macro magic
 
-v1 uses straightforward `lib` declarations and explicit wrapper methods. Macros
-can be added later if they preserve readability, but they are not the foundation.
+v1 uses straightforward `lib` declarations and explicit wrapper methods. A
+small `src/mrb/shim.c` wraps mruby macros and inline functions that Crystal
+cannot call directly (value type predicates, GC arena access, and the callback
+trampoline). The shim holds no policy: every decision stays in Crystal. Macros
+can be added later if they preserve readability, but they are not the
+foundation.
 
 ## Architecture
 
@@ -321,14 +325,18 @@ A process boundary is still required for untrusted scripts. `mrb.cr` is the
 in-host binding used inside that process, not a replacement for process
 isolation.
 
-## Open questions
+## Decisions (formerly open questions)
 
-1. Should v1 expose a macro-based class wrapper at all, or stay fully explicit?
-2. Should `Value` support arbitrary mruby object types, or only JSON-like values?
-3. Should `State` support a mutex-backed serialized mode?
-4. What is the minimum mruby gembox for the test suite?
-5. How should Crystal exceptions map to mruby exception classes?
-6. Do we need `mrb_load_irep` in v1, or only source loading?
-7. Which Windows toolchain is the primary target: MSVC or clang-cl?
-8. Should the binding expose a `State#eval` convenience method, or only
-   `load_string`?
+1. v1 stays fully explicit; there is no macro-based class wrapper.
+2. `Value` supports JSON-like values only. Arbitrary objects need a future,
+   opt-in API.
+3. `State` has no hidden mutex. Hosts create one state per process or worker.
+4. The test gembox is the interpreter core plus `mruby-compiler` and
+   `mruby-error`.
+5. Crystal exceptions map to mruby `RuntimeError`; arity errors map to
+   `ArgumentError`.
+6. RITE bytecode is supported through `State#compile` and `State#load_irep`.
+7. MSVC is the primary Windows target. The build script is provided but
+   unverified; Windows is unsupported until a smoke run is recorded.
+8. Both `State#eval` and `State#load_string` are exposed; `eval` is the
+   convenience entry point.

@@ -2,7 +2,11 @@
 #
 # The C shim wraps mruby macros and inline functions that Crystal cannot call
 # directly. Both files live under lib/ and are built by the Makefile.
-@[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.o #{__DIR__}/../../lib/libmruby.a -lm")]
+{% if flag?(:windows) %}
+  @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.obj #{__DIR__}/../../lib/libmruby.lib")]
+{% else %}
+  @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.o #{__DIR__}/../../lib/libmruby.a -lm")]
+{% end %}
 lib LibMRuby
   # Layout-compatible with mruby's `mrb_value` (MRB_WORD_BOXING, 64-bit).
   struct MrbValue

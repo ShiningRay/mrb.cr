@@ -29,7 +29,7 @@ DEST_LIB    := $(LIB_DIR)/libmruby.a
 SHIM_SRC    := src/mrb/shim.c
 SHIM_OBJ    := $(LIB_DIR)/mrb_shim.o
 
-.PHONY: all mruby clean distclean check examples
+.PHONY: all mruby clean distclean check examples bench asan
 
 all: $(DEST_LIB) $(SHIM_OBJ)
 
@@ -59,10 +59,22 @@ check: $(DEST_LIB) $(SHIM_OBJ)
 	crystal tool format --check
 	crystal spec
 
+ASAN_FLAGS ?= -fsanitize=address -fno-omit-frame-pointer -g
+
 examples: $(DEST_LIB) $(SHIM_OBJ)
 	crystal run examples/calculator.cr
 	crystal run examples/host_callback.cr
 	crystal run examples/json_values.cr
+
+bench: $(DEST_LIB) $(SHIM_OBJ)
+	crystal run --release benchmark/bench.cr
+
+# Rebuilds mruby and the shim with AddressSanitizer, then runs the specs.
+# Run `make clean && make` afterwards to restore the normal build.
+asan:
+	$(MAKE) clean
+	MRUBY_ASAN=1 $(MAKE) CFLAGS="-O1 $(ASAN_FLAGS)"
+	ASAN_OPTIONS=detect_leaks=0 crystal spec --link-flags "$(ASAN_FLAGS)"
 
 clean:
 	rm -f $(DEST_LIB) $(SHIM_OBJ)
