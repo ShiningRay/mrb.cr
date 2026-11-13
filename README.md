@@ -36,7 +36,7 @@ Crystal-to-Ruby bridge. This project targets a different point:
 The goal is not to replace mruby, and not to build a full Ruby implementation.
 The goal is to make mruby predictable to embed from Crystal.
 
-## Planned API
+## API
 
 ```crystal
 require "mrb"
