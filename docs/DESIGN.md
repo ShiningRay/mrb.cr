@@ -1,7 +1,8 @@
 # Design
 
-> Status: M1 and M2 implemented (state, values, errors, arena, refs). Other
-> sections describe the target contract; check the plan for milestone status.
+> Status: M1-M3 implemented (state, values, errors, arena, refs, and host
+> class/method/constant registration). Other sections describe the target
+> contract; check the plan for milestone status.
 
 ## Problem
 
@@ -222,7 +223,12 @@ mrb.define_method("Calculator", "add", 2) do |args|
 end
 ```
 
-The exact naming and scoping API is subject to M3.
+v1 registers one C trampoline and dispatches by method symbol, so host method
+names must be unique per `State`. Callback arguments arrive through
+`MRuby::Args`; return values may be `MRuby::Value`, `nil`, `Bool`, `Int32`,
+`Int64`, `Float64`, or `String`. A Crystal exception is converted into an
+mruby `RuntimeError`, and an arity mismatch into an mruby `ArgumentError`.
+Handlers are dropped from the state when it closes.
 
 ## C API strategy
 

@@ -210,6 +210,12 @@ module MRuby
       @raw.w.hash(hasher)
     end
 
+    # Internal: raw handle used by the callback dispatcher.
+    def raw_value : LibMRuby::MrbValue
+      ensure_open!
+      @raw
+    end
+
     protected def raw : LibMRuby::MrbValue
       @raw
     end

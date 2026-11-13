@@ -18,3 +18,8 @@
   form.
 - Diagnostic `State#gc_full` and `State#live_object_count` helpers with
   bounded-allocation stress coverage.
+- Host class, module, method, class-method, module-function, and constant
+  registration (M3).
+- `MRuby::Args` with explicit arity checking and a single C trampoline.
+- Crystal exceptions and argument errors are translated into mruby
+  `RuntimeError` / `ArgumentError` with stable messages.
