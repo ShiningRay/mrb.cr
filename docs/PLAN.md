@@ -1,7 +1,7 @@
 # Implementation Plan
 
-> Status: planning. Milestones are completed only when their acceptance criteria
-> pass on a real build.
+> Status: 0.1.0 complete. M0-M5 acceptance criteria pass on a real build;
+> M6 (release) is prepared. Platform caveats are recorded in COMPATIBILITY.md.
 
 ## Guiding constraints
 

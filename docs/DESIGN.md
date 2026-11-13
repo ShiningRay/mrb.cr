@@ -1,8 +1,8 @@
 # Design
 
-> Status: M1-M4 implemented (state, values, errors, arena, refs, host
-> registration, file loading, and RITE bytecode). Other sections describe the
-> target contract; check the plan for milestone status.
+> Status: 0.1.0 implemented (state, values, errors, arena, refs, host
+> registration, file loading, RITE bytecode, and hardening). Other sections
+> describe the target contract; check the plan for milestone status.
 
 ## Problem
 

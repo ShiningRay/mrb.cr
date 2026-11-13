@@ -4,12 +4,12 @@
 
 Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 
-**Status: implementation in progress (M5).** The binding links mruby 4.0.0,
-evaluates source and files, converts JSON-like values, raises structured
-errors, supports GC arenas and long-lived references, registers host classes,
-modules, methods, and constants, and loads RITE bytecode. Hardening covers
-malformed input, ASAN, and benchmarks; Windows remains unverified. Do not use
-this in production yet.
+**Status: 0.1.0.** The binding links mruby 4.0.0, evaluates source and files,
+converts JSON-like values, raises structured errors, supports GC arenas and
+long-lived references, registers host classes, modules, methods, and constants,
+and loads RITE bytecode. Tested on macOS arm64 and in Linux CI; Windows is
+unverified. This is a 0.x release and not production-hardened. `mrb.cr` is not
+a sandbox.
 
 `mrb.cr` is a from-scratch binding intended to be smaller and more predictable
 than a general-purpose Ruby bridge:
