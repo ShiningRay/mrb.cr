@@ -4,7 +4,7 @@
 
 Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 
-**Status: 0.2.0.** The binding links mruby 4.0.0, evaluates source and files,
+**Status: 0.2.1.** The binding links mruby 4.0.0, evaluates source and files,
 converts JSON-like values, raises structured errors, supports GC arenas and
 long-lived references, registers host classes, modules, methods, and constants,
 and loads RITE bytecode. Tested on macOS arm64 and in Linux CI. Windows x86_64
@@ -93,15 +93,15 @@ MRuby::State.open do |mrb|
 end
 ```
 
-- `Args#block_given? : Bool` / `Args#block : Value?` â€?block access during a
+- `Args#block_given? : Bool` / `Args#block : Value?` ï¿½?block access during a
   host callback.
 - `State#yield(block : Value)` / `yield(block, args : Array)` /
-  `yield(block, arg : CallbackValue, *rest : CallbackValue) : Value` â€?invoke a
+  `yield(block, arg : CallbackValue, *rest : CallbackValue) : Value` ï¿½?invoke a
   Proc; raises `MRuby::Error` on script exceptions.
-- `State#funcall(receiver : Value, name : String, args : Array(CallbackValue) = [] of CallbackValue, block : Value? = nil) : Value` â€?
+- `State#funcall(receiver : Value, name : String, args : Array(CallbackValue) = [] of CallbackValue, block : Value? = nil) : Value` ï¿½?
   call a Ruby method; raises `MRuby::Error` on script exceptions.
 - `Value#proc? : Bool` and `Ref.proc(state : State, value : Value) : Ref` /
-  `Ref.open_proc(state : State, value : Value, &)` â€?GC-register Proc values
+  `Ref.open_proc(state : State, value : Value, &)` ï¿½?GC-register Proc values
   for delayed/yield use (`Ref.proc` requires explicit `#release`).
 
 ## Goals

@@ -1,3 +1,7 @@
+## 0.2.1 (2026-11-14)
+
+- Fix: report 0.2.1 in MRuby::VERSION (was incorrectly 0.1.0 in 0.2.0). No API changes.
+
 ## 0.2.0 (2026-11-14)
 
 - Added Windows MinGW (MSYS2 UCRT64) build support and canonical native library artifact names.
