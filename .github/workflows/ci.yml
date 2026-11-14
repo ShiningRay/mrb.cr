@@ -92,11 +92,12 @@ jobs:
           crystal run examples/json_values.cr
 
   # Windows, MSYS2 UCRT64 gcc: verify the Makefile path (mruby gcc build, gcc
-  # shim, C smoke). Crystal here is pinned to 1.21.1 pending the official
-  # Windows distribution's mingw-target status; specs run only when the
-  # installed compiler targets mingw32.
+  # shim, C smoke). No Crystal steps: the official Crystal Windows
+  # distribution targets MSVC even at 1.21.1, so mingw-target Crystal specs
+  # are only reachable with an MSYS2-built compiler (verified locally; see
+  # docs/COMPATIBILITY.md).
   windows-gcc:
-    name: windows (msys2 ucrt64 gcc)
+    name: windows (msys2 ucrt64 gcc, make + C smoke)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,22 +106,14 @@ jobs:
           msystem: UCRT64
           update: false
           release: true
-          # inherit: expose Windows-PATH crystal/ruby inside the msys2 shell
-          # while /ucrt64/bin/gcc stays first for C compilation and linking.
           path-type: inherit
           install: base-devel git mingw-w64-ucrt-x86_64-gcc
-      - uses: oprypin/install-crystal@v1
-        with:
-          crystal: 1.21.1
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
       - name: Build libmruby and shim (gcc)
         shell: msys2 {0}
         run: make CC=gcc
-      - name: Format check
-        shell: msys2 {0}
-        run: crystal tool format --check
       - name: C smoke test
         shell: msys2 {0}
         run: |
@@ -128,9 +121,3 @@ jobs:
           gcc -I vendor/mruby/include -I vendor/mruby/build/host/include \
             -o build/smoke scripts/c_smoke.c lib/mrb_shim.o lib/libmruby.a -lm
           ./build/smoke
-      - name: Specs
-        shell: msys2 {0}
-        run: crystal spec
-      - name: Examples
-        shell: msys2 {0}
-        run: make examples

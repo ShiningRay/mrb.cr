@@ -8,10 +8,11 @@ Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 converts JSON-like values, raises structured errors, supports GC arenas and
 long-lived references, registers host classes, modules, methods, and constants,
 and loads RITE bytecode. Tested on macOS arm64 and in Linux CI. Windows x86_64
-MinGW (MSYS2 UCRT64, Crystal mingw32 target) runs the full spec suite, examples,
-and a C smoke test in CI; MSVC is verified at the C layer (mruby build, shim
-compile, smoke run) only, since no Crystal MSVC target is distributed upstream.
-This is a 0.x release and not production-hardened. `mrb.cr` is not a sandbox.
+runs the full spec suite, examples, and a C smoke test in CI on the official
+Crystal distribution (MSVC target, cl.exe linking); an MSYS2-built mingw32-target
+Crystal passes the full suite locally, and the gcc Makefile build plus C smoke
+are covered on CI. This is a 0.x release and not production-hardened.
+`mrb.cr` is not a sandbox.
 
 `mrb.cr` is a from-scratch binding intended to be smaller and more predictable
 than a general-purpose Ruby bridge:
