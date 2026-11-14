@@ -93,15 +93,15 @@ MRuby::State.open do |mrb|
 end
 ```
 
-- `Args#block_given? : Bool` / `Args#block : Value?` �?block access during a
+- `Args#block_given? : Bool` / `Args#block : Value?` —block access during a
   host callback.
 - `State#yield(block : Value)` / `yield(block, args : Array)` /
-  `yield(block, arg : CallbackValue, *rest : CallbackValue) : Value` �?invoke a
+  `yield(block, arg : CallbackValue, *rest : CallbackValue) : Value` —invoke a
   Proc; raises `MRuby::Error` on script exceptions.
-- `State#funcall(receiver : Value, name : String, args : Array(CallbackValue) = [] of CallbackValue, block : Value? = nil) : Value` �?
+- `State#funcall(receiver : Value, name : String, args : Array(CallbackValue) = [] of CallbackValue, block : Value? = nil) : Value` —
   call a Ruby method; raises `MRuby::Error` on script exceptions.
 - `Value#proc? : Bool` and `Ref.proc(state : State, value : Value) : Ref` /
-  `Ref.open_proc(state : State, value : Value, &)` �?GC-register Proc values
+  `Ref.open_proc(state : State, value : Value, &)` —GC-register Proc values
   for delayed/yield use (`Ref.proc` requires explicit `#release`).
 
 ## Goals
