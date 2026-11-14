@@ -1,10 +1,16 @@
-# Link the local build produced by `make`.
+# Link the local build produced by `make` (or scripts/build_windows.ps1).
 #
 # The C shim wraps mruby macros and inline functions that Crystal cannot call
-# directly. Canonical artifact names are libmruby.a and mrb_shim.o (Makefile
-# may create .lib/.obj aliases on Windows for toolchain compatibility).
+# directly. Canonical artifact names follow the Crystal target ABI: MinGW
+# (`flag?(:gnu)`) links libmruby.a + mrb_shim.o; the MSVC target links
+# libmruby.lib + mrb_shim.obj. The build scripts stage both name pairs so
+# either annotation resolves.
 {% if flag?(:windows) %}
-  @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.o #{__DIR__}/../../lib/libmruby.a")]
+  {% if flag?(:gnu) %}
+    @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.o #{__DIR__}/../../lib/libmruby.a")]
+  {% else %}
+    @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.obj #{__DIR__}/../../lib/libmruby.lib")]
+  {% end %}
 {% else %}
   @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.o #{__DIR__}/../../lib/libmruby.a -lm")]
 {% end %}

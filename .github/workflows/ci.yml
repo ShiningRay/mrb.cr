@@ -34,5 +34,87 @@ jobs:
         run: crystal tool format --check
       - name: Specs
         run: crystal spec
+      - name: C smoke test
+        run: |
+          mkdir -p build
+          gcc -I vendor/mruby/include -I vendor/mruby/build/host/include \
+            -o build/smoke scripts/c_smoke.c lib/mrb_shim.o lib/libmruby.a
+          ./build/smoke
       - name: Examples
         run: make examples
+
+  # Crystal mingw32 target + MSYS2 UCRT64 gcc: full spec suite (the supported
+  # Windows path). bison/gperf are intentionally omitted — the mruby 4.0.0 tag
+  # ships a pregenerated parser.
+  windows-spec:
+    name: spec (windows, msys2 ucrt64 gcc)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          release: true
+          # inherit: expose Windows-PATH crystal/ruby inside the msys2 shell
+          # while /ucrt64/bin/gcc stays first for C compilation and linking.
+          path-type: inherit
+          install: base-devel git mingw-w64-ucrt-x86_64-gcc
+      - uses: oprypin/install-crystal@v1
+        with:
+          crystal: latest
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - name: Build libmruby and shim
+        shell: msys2 {0}
+        run: make CC=gcc
+      - name: Format check
+        shell: msys2 {0}
+        run: crystal tool format --check
+      - name: Specs
+        shell: msys2 {0}
+        run: crystal spec
+      - name: C smoke test
+        shell: msys2 {0}
+        run: |
+          mkdir -p build
+          gcc -I vendor/mruby/include -I vendor/mruby/build/host/include \
+            -o build/smoke scripts/c_smoke.c lib/mrb_shim.o lib/libmruby.a
+          ./build/smoke
+      - name: Examples
+        shell: msys2 {0}
+        run: make examples
+
+  # MSVC: mruby 4.0.0 (visualcpp toolchain, lib.exe -> libmruby.lib) and the
+  # shim compile with cl.exe, and the C smoke test links and runs. The Crystal
+  # MSVC target itself is not distributed upstream, so Crystal linking stays on
+  # the mingw32 target above.
+  windows-msvc:
+    name: msvc build (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build mruby and shim with MSVC
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
+      - name: Assert staged artifacts
+        shell: pwsh
+        run: |
+          $files = @('lib/libmruby.lib', 'lib/libmruby.a', 'lib/mrb_shim.obj', 'lib/mrb_shim.o')
+          foreach ($f in $files) {
+            if (!(Test-Path $f)) { throw "missing artifact: $f" }
+            "{0}: {1} bytes" -f $f, (Get-Item $f).Length
+          }
+      - name: C smoke test
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build | Out-Null
+          cl /nologo /MD /D_CRT_SECURE_NO_WARNINGS /I vendor/mruby/include `
+            /I vendor/mruby/build/host/include /Fe:build\smoke.exe `
+            scripts/c_smoke.c lib/mrb_shim.obj lib/libmruby.lib
+          .\build\smoke.exe
