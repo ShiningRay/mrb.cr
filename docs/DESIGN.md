@@ -336,7 +336,7 @@ isolation.
 5. Crystal exceptions map to mruby `RuntimeError`; arity errors map to
    `ArgumentError`.
 6. RITE bytecode is supported through `State#compile` and `State#load_irep`.
-7. MSVC is the primary Windows target. The build script is provided but
-   unverified; Windows is unsupported until a smoke run is recorded.
+7. MinGW (mingw32) is the locally verified Windows build path. MSVC is an
+   alternate toolchain; its build script path is unverified.
 8. Both `State#eval` and `State#load_string` are exposed; `eval` is the
    convenience entry point.

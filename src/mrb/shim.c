@@ -515,3 +515,103 @@ mrb_cr_load_irep(mrb_state *mrb, const uint8_t *data, size_t len,
   }
   return result;
 }
+
+
+/* Block / Proc / call helpers -------------------------------------------- */
+
+mrb_bool
+mrb_cr_proc_p(mrb_state *mrb, mrb_value v)
+{
+  (void)mrb;
+  return mrb_proc_p(v);
+}
+
+mrb_bool
+mrb_cr_block_given(mrb_state *mrb)
+{
+  return mrb_block_given_p(mrb);
+}
+
+mrb_value
+mrb_cr_get_block(mrb_state *mrb)
+{
+  mrb_callinfo *ci = mrb->c->ci;
+  return ci->stack[mrb_ci_bidx(ci)];
+}
+
+struct mrb_cr_yield_args {
+  mrb_value blk;
+  mrb_int argc;
+  const mrb_value *argv;
+};
+
+static mrb_value
+mrb_cr_yield_body(mrb_state *mrb, mrb_value data)
+{
+  struct mrb_cr_yield_args *args = (struct mrb_cr_yield_args *)mrb_cptr(data);
+  return mrb_yield_argv(mrb, args->blk, args->argc, args->argv);
+}
+
+mrb_value
+mrb_cr_yield(mrb_state *mrb, mrb_value blk, int64_t argc, const mrb_value *argv,
+             mrb_bool *error)
+{
+  struct mrb_cr_yield_args args;
+  mrb_bool protect_error = FALSE;
+  mrb_value result;
+
+  args.blk = blk;
+  args.argc = (mrb_int)argc;
+  args.argv = argv;
+  result = mrb_protect(mrb, mrb_cr_yield_body, mrb_cptr_value(mrb, &args), &protect_error);
+  if (protect_error) {
+    mrb->exc = mrb_obj_ptr(result);
+    *error = TRUE;
+  } else if (mrb->exc != NULL) {
+    *error = TRUE;
+  } else {
+    *error = FALSE;
+  }
+  return result;
+}
+
+struct mrb_cr_funcall_args {
+  mrb_value receiver;
+  mrb_sym mid;
+  mrb_int argc;
+  const mrb_value *argv;
+  mrb_value blk;
+};
+
+static mrb_value
+mrb_cr_funcall_body(mrb_state *mrb, mrb_value data)
+{
+  struct mrb_cr_funcall_args *args = (struct mrb_cr_funcall_args *)mrb_cptr(data);
+  return mrb_funcall_with_block(mrb, args->receiver, args->mid, args->argc, args->argv, args->blk);
+}
+
+mrb_value
+mrb_cr_funcall(mrb_state *mrb, mrb_value receiver, const char *name, int64_t argc,
+               const mrb_value *argv, mrb_value blk, mrb_bool *error)
+{
+  struct mrb_cr_funcall_args args;
+  mrb_bool protect_error = FALSE;
+  mrb_value result;
+
+  args.receiver = receiver;
+  args.mid = mrb_intern_cstr(mrb, name);
+  args.argc = (mrb_int)argc;
+  args.argv = argv;
+  args.blk = blk;
+  result = mrb_protect(mrb, mrb_cr_funcall_body, mrb_cptr_value(mrb, &args), &protect_error);
+  if (protect_error) {
+    mrb->exc = mrb_obj_ptr(result);
+    *error = TRUE;
+  } else if (mrb->exc != NULL) {
+    *error = TRUE;
+  } else {
+    *error = FALSE;
+  }
+  return result;
+}
+

@@ -32,5 +32,20 @@ module MRuby
     def to_a : Array(Value)
       Array(Value).new(size) { |index| self[index] }
     end
+
+    # Returns `true` if a block was passed to this call.
+    def block_given? : Bool
+      @state.ensure_open!
+      LibMRuby.mrb_cr_block_given(@state.raw)
+    end
+
+    # Returns the block passed to this call as a `Value` (Proc), or `nil` when
+    # no block was given. The returned value is only valid while the state is
+    # open and reachable; use `Value#ref` to keep it for later calls.
+    def block : Value?
+      @state.ensure_open!
+      return nil unless block_given?
+      Value.new(@state, LibMRuby.mrb_cr_get_block(@state.raw))
+    end
   end
 end

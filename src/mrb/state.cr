@@ -1,6 +1,7 @@
 module MRuby
-  # Values a host callback may return. Only JSON-like scalars and `Value` are
-  # converted; compound values must be wrapped explicitly.
+  # Values a host callback may return or pass to mruby calls. Only scalars and
+  # `Value` handles (including Proc values) are converted; compound values must
+  # be wrapped explicitly.
   alias CallbackValue = Value | Nil | Bool | Int32 | Int64 | Float64 | String
 
   # Owns one mruby interpreter state.
@@ -64,6 +65,34 @@ module MRuby
     # Raises `MRuby::Error` for parser errors and script exceptions.
     def eval(code : String) : Value
       eval_with_filename(code, "(eval)")
+    end
+
+    # Creates a Proc value from Ruby source returning a block/lambda.
+    #
+    # The returned `Value` holds a Proc; use `#yield` or `#funcall` to call it.
+    def create_proc(code : String, filename : String = "(proc)") : Value
+      eval_with_filename(code, filename)
+    end
+
+    # Returns `true` if a Proc block is available in the current mruby context.
+    #
+    # Valid inside host callbacks; false at top-level scripts or when the
+    # underlying call slot does not hold a Proc.
+    def block_given? : Bool
+      ensure_open!
+      return false unless LibMRuby.mrb_cr_block_given(@raw)
+      blk = LibMRuby.mrb_cr_get_block(@raw)
+      LibMRuby.mrb_cr_proc_p(@raw, blk)
+    end
+
+    # Returns the current block (Proc) as a `Value`, or nil if no Proc block is
+    # available in the current context.
+    def current_block : Value?
+      ensure_open!
+      return nil unless LibMRuby.mrb_cr_block_given(@raw)
+      blk = LibMRuby.mrb_cr_get_block(@raw)
+      return nil unless LibMRuby.mrb_cr_proc_p(@raw, blk)
+      Value.new(self, blk)
     end
 
     # Evaluates Ruby source. Alias for `#eval`.
@@ -140,6 +169,69 @@ module MRuby
       ensure
         LibMRuby.mrb_cr_arena_restore(@raw, index)
       end
+    end
+
+    # Yields to an mruby block (Proc value) with no arguments.
+    # Raises `MRuby::Error` if the block raises.
+    def yield(block : Value) : Value
+      invoke_block(block, [] of CallbackValue)
+    end
+
+    # Yields to an mruby block with the given argument array.
+    # Raises `MRuby::Error` if the block raises.
+    def yield(block : Value, args : Array) : Value
+      converted = Array(CallbackValue).new(args.size)
+      args.each { |arg| converted << arg.as(CallbackValue) }
+      invoke_block(block, converted)
+    end
+
+    # Yields to an mruby block with splat-style arguments.
+    # Raises `MRuby::Error` if the block raises.
+    def yield(block : Value, arg : CallbackValue, *rest : CallbackValue) : Value
+      converted = Array(CallbackValue).new(rest.size + 1)
+      converted << arg
+      rest.each { |a| converted << a }
+      invoke_block(block, converted)
+    end
+
+    private def invoke_block(block : Value, args : Array(CallbackValue)) : Value
+      ensure_open!
+      ensure_same_state!(block)
+      raise Error.new("expected Proc block, got #{block.type_name}") unless block.proc?
+      argv = to_mrb_argv(args)
+      error = false
+      if argv.empty?
+        raw = LibMRuby.mrb_cr_yield(@raw, block.raw_value, 0_i64, Pointer(LibMRuby::MrbValue).null, pointerof(error))
+      else
+        raw = LibMRuby.mrb_cr_yield(@raw, block.raw_value, argv.size.to_i64, argv.to_unsafe, pointerof(error))
+      end
+      raise_last_error("(yield)") if error
+      Value.new(self, raw)
+    end
+
+    # Calls a method on a receiver, optionally passing an mruby block (Proc).
+    # Raises `MRuby::Error` if the call raises.
+    def funcall(receiver : Value, name : String, args : Array(CallbackValue) = [] of CallbackValue, block : Value? = nil) : Value
+      ensure_open!
+      ensure_same_state!(receiver)
+      blk = if block
+              ensure_same_state!(block)
+              raise Error.new("expected Proc block, got #{block.type_name}") unless block.proc?
+              block.raw_value
+            else
+              LibMRuby.mrb_cr_nil_value
+            end
+      argv = to_mrb_argv(args)
+      error = false
+      if argv.empty?
+        raw = LibMRuby.mrb_cr_funcall(@raw, receiver.raw_value, name.to_unsafe, 0_i64,
+          Pointer(LibMRuby::MrbValue).null, blk, pointerof(error))
+      else
+        raw = LibMRuby.mrb_cr_funcall(@raw, receiver.raw_value, name.to_unsafe, argv.size.to_i64,
+          argv.to_unsafe, blk, pointerof(error))
+      end
+      raise_last_error("(funcall)") if error
+      Value.new(self, raw)
     end
 
     # Registers a value with mruby's GC. See `Ref`.
@@ -274,6 +366,16 @@ module MRuby
       String.new(pointer, len.to_i32)
     end
 
+    protected def ensure_same_state!(value : Value) : Nil
+      unless value.state.same?(self)
+        raise Error.new("value belongs to a different mruby state")
+      end
+    end
+
+    private def to_mrb_argv(args : Array(CallbackValue)) : Array(LibMRuby::MrbValue)
+      args.map { |arg| to_mrb_value(arg) }
+    end
+
     private def register_method(owner : String?, name : String, arity : Int32,
                                 kind : Symbol, callback : Proc(Args, CallbackValue)) : Nil
       ensure_open!
@@ -309,9 +411,7 @@ module MRuby
     private def to_mrb_value(value : CallbackValue) : LibMRuby::MrbValue
       case value
       when Value
-        unless value.state.same?(self)
-          raise Error.new("value belongs to a different mruby state")
-        end
+        ensure_same_state!(value)
         value.raw_value
       when Nil
         LibMRuby.mrb_cr_nil_value

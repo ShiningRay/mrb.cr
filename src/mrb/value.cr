@@ -120,6 +120,11 @@ module MRuby
       LibMRuby.mrb_cr_symbol_p(@raw)
     end
 
+    def proc? : Bool
+      ensure_open!
+      LibMRuby.mrb_cr_proc_p(state.raw, @raw)
+    end
+
     # Converts a boolean value. `nil`, `false`, and `true` are accepted;
     # other types raise `MRuby::Error`.
     def as_bool : Bool

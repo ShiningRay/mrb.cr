@@ -7,9 +7,11 @@ Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 **Status: 0.1.0.** The binding links mruby 4.0.0, evaluates source and files,
 converts JSON-like values, raises structured errors, supports GC arenas and
 long-lived references, registers host classes, modules, methods, and constants,
-and loads RITE bytecode. Tested on macOS arm64 and in Linux CI; Windows is
-unverified. This is a 0.x release and not production-hardened. `mrb.cr` is not
-a sandbox.
+and loads RITE bytecode. Tested on macOS arm64 and in Linux CI. Windows x86_64
+MinGW (MSYS2 UCRT64, Crystal mingw32 target) has passed local smoke build plus
+full spec (84 examples, 0 failures, 0 errors, 0 pending); MSVC is unverified and
+no Windows CI runner exists. This is a 0.x release and not production-hardened.
+`mrb.cr` is not a sandbox.
 
 `mrb.cr` is a from-scratch binding intended to be smaller and more predictable
 than a general-purpose Ruby bridge:
@@ -71,8 +73,36 @@ MRuby::State.open do |mrb|
 end
 ```
 
-The evaluation, value, arena/ref, and method registration APIs are implemented.
+The evaluation, value conversion, arena/ref, host method registration,
+block/Proc handling, and `State#yield`/`State#funcall` APIs are implemented.
 See the design and plan for the exact contract.
+
+Block and call helpers:
+
+```crystal
+MRuby::State.open do |mrb|
+  mrb.define_method("twice", 0) do |args|
+    blk = args.block # Value? (valid during callback)
+    blk ? mrb.yield(blk.not_nil!) : nil
+  end
+
+  mrb.eval("twice { 21 }").as_i64 # => 21
+
+  target = mrb.eval("'hi'")
+  mrb.funcall(target, "upcase").as_s # => "HI"
+end
+```
+
+- `Args#block_given? : Bool` / `Args#block : Value?` â€?block access during a
+  host callback.
+- `State#yield(block : Value)` / `yield(block, args : Array)` /
+  `yield(block, arg : CallbackValue, *rest : CallbackValue) : Value` â€?invoke a
+  Proc; raises `MRuby::Error` on script exceptions.
+- `State#funcall(receiver : Value, name : String, args : Array(CallbackValue) = [] of CallbackValue, block : Value? = nil) : Value` â€?
+  call a Ruby method; raises `MRuby::Error` on script exceptions.
+- `Value#proc? : Bool` and `Ref.proc(state : State, value : Value) : Ref` /
+  `Ref.open_proc(state : State, value : Value, &)` â€?GC-register Proc values
+  for delayed/yield use (`Ref.proc` requires explicit `#release`).
 
 ## Goals
 
@@ -108,7 +138,8 @@ See the design and plan for the exact contract.
 - Crystal >= 1.10
 - Ruby >= 3.0 with Rake (build time only)
 - a C toolchain (clang or gcc)
-- `bison` and `gperf`
+- `bison` and `gperf` only when regenerating the parser from a grammar
+  change; release tags ship a pregenerated parser
 - `git`
 
 ### Build

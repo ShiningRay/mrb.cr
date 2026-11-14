@@ -16,6 +16,21 @@ module MRuby
       LibMRuby.mrb_cr_gc_register(@state.raw, @raw)
     end
 
+    # Registers a Proc value, yields the ref, and releases it on exit.
+    def self.open_proc(state : State, value : Value, &)
+      ref = value.ref
+      begin
+        yield ref
+      ensure
+        ref.release
+      end
+    end
+
+    # Registers a Proc value and returns a ref for delayed calls.
+    def self.proc(state : State, value : Value) : Ref
+      value.ref
+    end
+
     # Registers a value, yields the ref, and releases it on exit.
     def self.open(value : Value, &)
       ref = value.ref

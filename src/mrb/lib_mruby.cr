@@ -1,9 +1,10 @@
 # Link the local build produced by `make`.
 #
 # The C shim wraps mruby macros and inline functions that Crystal cannot call
-# directly. Both files live under lib/ and are built by the Makefile.
+# directly. Canonical artifact names are libmruby.a and mrb_shim.o (Makefile
+# may create .lib/.obj aliases on Windows for toolchain compatibility).
 {% if flag?(:windows) %}
-  @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.obj #{__DIR__}/../../lib/libmruby.lib")]
+  @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.o #{__DIR__}/../../lib/libmruby.a")]
 {% else %}
   @[Link(ldflags: "#{__DIR__}/../../lib/mrb_shim.o #{__DIR__}/../../lib/libmruby.a -lm")]
 {% end %}
@@ -80,6 +81,12 @@ lib LibMRuby
   fun mrb_cr_integer_value(mrb : Void*, value : Int64) : MrbValue
   fun mrb_cr_float_value(mrb : Void*, value : Float64) : MrbValue
   fun mrb_cr_string_value(mrb : Void*, ptr : UInt8*, len : LibC::SizeT) : MrbValue
+
+  fun mrb_cr_proc_p(mrb : Void*, v : MrbValue) : Bool
+  fun mrb_cr_block_given(mrb : Void*) : Bool
+  fun mrb_cr_get_block(mrb : Void*) : MrbValue
+  fun mrb_cr_yield(mrb : Void*, blk : MrbValue, argc : Int64, argv : MrbValue*, error : Bool*) : MrbValue
+  fun mrb_cr_funcall(mrb : Void*, receiver : MrbValue, name : UInt8*, argc : Int64, argv : MrbValue*, blk : MrbValue, error : Bool*) : MrbValue
 
   fun mrb_cr_compile_irep(mrb : Void*, code : UInt8*, len : LibC::SizeT, filename : UInt8*, bin : UInt8**, bin_len : LibC::SizeT*) : Bool
   fun mrb_cr_free_bin(mrb : Void*, bin : Void*) : Void

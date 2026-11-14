@@ -20,7 +20,8 @@ Requirements:
 - Crystal >= 1.10
 - Ruby >= 3.0 with Rake (build time only)
 - clang or gcc
-- bison and gperf
+- bison and gperf only when regenerating the parser from a grammar change;
+  release tags ship a pregenerated parser
 - git
 
 The resulting binary does not require Ruby at runtime.
@@ -124,6 +125,62 @@ mruby does not enforce CPU, memory, or wall-clock limits. Hosts must add:
   `mruby-compiler`, and `mruby-error`);
 - validated host callbacks;
 - input limits for scripts and values.
+
+## Blocks and Proc calls
+
+Host callbacks can inspect and invoke Ruby blocks (signatures per
+`src/mrb/args.cr`, `src/mrb/state.cr`, `src/mrb/value.cr`, `src/mrb/ref.cr`):
+
+```crystal
+MRuby::State.open do |mrb|
+  mrb.define_method("call_with", 1) do |args|
+    if args.block_given?
+      blk = args.block.not_nil! # Value? valid during this callback
+      mrb.yield(blk, [args[0]] of MRuby::CallbackValue)
+    else
+      nil
+    end
+  end
+
+  mrb.eval("call_with(21) { |x| x * 2 }").as_i64 # => 42
+end
+```
+
+- `Args#block_given? : Bool` — `true` when a Proc block was passed to the host
+  method (`src/mrb/args.cr:37-40`).
+- `Args#block : Value?` — returns the block Proc or `nil`. The value is only
+  valid while the host callback/state context is valid; to keep it for later
+  calls, register it (e.g. `Value#ref`) and protect its lifetime
+  (`src/mrb/args.cr:45-49`).
+- `State#yield(block : Value) : Value`, `yield(block : Value, args : Array) : Value`,
+  and `yield(block : Value, arg : CallbackValue, *rest : CallbackValue) : Value`
+  invoke a Proc and raise `MRuby::Error` if the block raises
+  (`src/mrb/state.cr:176-195`, `197-210`).
+- `State#funcall(receiver : Value, name : String, args : Array(CallbackValue) = [] of CallbackValue, block : Value? = nil) : Value`
+  calls a Ruby method and raises `MRuby::Error` on script exceptions. The
+  optional `block` parameter accepts a Proc `Value` (or `nil`)
+  (`src/mrb/state.cr:214-235`).
+
+Proc lifetime helpers:
+
+```crystal
+proc_val = mrb.eval("Proc.new { |x| x + 1 }")
+ref = MRuby::Ref.proc(mrb, proc_val) # GC-registered
+mrb.yield(ref.value, [1_i64] of MRuby::CallbackValue).as_i64 # => 2
+ref.release
+
+MRuby::Ref.open_proc(mrb, mrb.eval("Proc.new { 5 }")) do |r|
+  mrb.yield(r.value).as_i64 # released on block exit
+end
+```
+
+- `Value#proc? : Bool` reports whether a value is a Proc (`src/mrb/value.cr:123-126`).
+- `Ref.proc(state : State, value : Value) : Ref` registers the value with mruby's
+  GC and returns a ref; caller is responsible for `#release`
+  (`src/mrb/ref.cr:30-32`).
+- `Ref.open_proc(state : State, value : Value, &)` registers, yields the ref, and
+  releases it on exit (`src/mrb/ref.cr:20-27`). Registered refs keep Procs alive
+  across full GC cycles while held.
 
 ## Bytecode
 

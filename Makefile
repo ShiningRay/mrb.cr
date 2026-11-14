@@ -3,7 +3,8 @@
 # Requirements:
 #   - Ruby >= 3.0 with Rake (build time only)
 #   - a C toolchain (clang or gcc)
-#   - bison and gperf (mruby regenerates its parser from source)
+#   - bison and gperf only when regenerating the parser from a grammar change
+#     (release tags ship a pregenerated y.tab.c)
 #
 # Usage:
 #   make            # fetch mruby 4.0.0 and build lib/libmruby.a
@@ -26,8 +27,12 @@ MRUBY_BUILD_INC := $(MRUBY_DIR)/build/$(MRUBY_BUILD)/include
 MRUBY_LIB   := $(MRUBY_DIR)/build/$(MRUBY_BUILD)/lib/libmruby.a
 LIB_DIR     := lib
 DEST_LIB    := $(LIB_DIR)/libmruby.a
+DEST_LIB_WIN := $(LIB_DIR)/libmruby.lib
 SHIM_SRC    := src/mrb/shim.c
 SHIM_OBJ    := $(LIB_DIR)/mrb_shim.o
+SHIM_OBJ_WIN := $(LIB_DIR)/mrb_shim.obj
+MRUBY_CONFIG_SRC := $(CURDIR)/build_config/mrb_cr.rb
+MRUBY_CONFIG_WRITABLE := $(MRUBY_DIR)/build/mrb_cr.rb
 
 .PHONY: all mruby clean distclean check examples bench asan
 
@@ -45,15 +50,19 @@ $(MRUBY_STAMP):
 mruby: $(MRUBY_STAMP)
 
 $(MRUBY_LIB): $(MRUBY_STAMP) build_config/mrb_cr.rb
-	cd $(MRUBY_DIR) && MRUBY_CONFIG=$(CURDIR)/build_config/mrb_cr.rb $(RUBY) -S rake -j$(JOBS)
+	@mkdir -p $(MRUBY_DIR)/build
+	cp $(MRUBY_CONFIG_SRC) $(MRUBY_CONFIG_WRITABLE)
+	cd $(MRUBY_DIR) && MRUBY_CONFIG=build/mrb_cr.rb $(RUBY) -S rake -j$(JOBS)
 
 $(DEST_LIB): $(MRUBY_LIB)
 	@mkdir -p $(LIB_DIR)
 	cp $(MRUBY_LIB) $(DEST_LIB)
+	@if [ -n "$$WINDIR" ] || [ "$(OS)" = "Windows_NT" ]; then cp $(DEST_LIB) $(DEST_LIB_WIN); fi
 
 $(SHIM_OBJ): $(SHIM_SRC) $(MRUBY_LIB)
 	@mkdir -p $(LIB_DIR)
 	$(CC) $(CFLAGS) -I$(MRUBY_INC) -I$(MRUBY_BUILD_INC) -c $(SHIM_SRC) -o $(SHIM_OBJ)
+	@if [ -n "$$WINDIR" ] || [ "$(OS)" = "Windows_NT" ]; then cp $(SHIM_OBJ) $(SHIM_OBJ_WIN); fi
 
 check: $(DEST_LIB) $(SHIM_OBJ)
 	crystal tool format --check
