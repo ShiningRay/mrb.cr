@@ -41,6 +41,6 @@ end
 
 describe MRuby do
   it "has a version" do
-    MRuby::VERSION.should eq("0.1.0")
+    MRuby::VERSION.should eq("0.2.1")
   end
 end
