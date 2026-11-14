@@ -4,7 +4,7 @@
 
 Repository name: `mrb.cr`. Shard name: `mrb`. Crystal module: `MRuby`.
 
-**Status: 0.1.0.** The binding links mruby 4.0.0, evaluates source and files,
+**Status: 0.2.0.** The binding links mruby 4.0.0, evaluates source and files,
 converts JSON-like values, raises structured errors, supports GC arenas and
 long-lived references, registers host classes, modules, methods, and constants,
 and loads RITE bytecode. Tested on macOS arm64 and in Linux CI. Windows x86_64

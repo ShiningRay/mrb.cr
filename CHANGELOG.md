@@ -1,3 +1,11 @@
+## 0.2.0 (2026-11-14)
+
+- Added Windows MinGW (MSYS2 UCRT64) build support and canonical native library artifact names.
+- Added writable mruby config copy to avoid .lock writes into read-only directories.
+- Added block/Proc API: Args#block_given?, Args#block, State#yield, State#funcall, Value#proc?, Ref.proc, Ref.open_proc.
+- State#funcall and State#yield now use mrb_protect and preserve Ruby exception details.
+- Updated documentation for Windows status, block/Proc usage, and API signatures.
+
 # Changelog
 
 ## 0.1.0 (2026-11-14)
