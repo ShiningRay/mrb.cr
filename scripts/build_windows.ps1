@@ -53,18 +53,25 @@ try {
   Write-Host "Using C compiler: $($cc.Exe)"
 
   if ($cc.Name -eq "msvc") {
-    # GNU coreutils `link` (bundled with Git for Windows / RubyInstaller's
-    # MSYS) shadows MSVC link.exe during rake's PATH resolution, so pin the
-    # MSVC tools to absolute paths. mruby's visualcpp toolchain reads
-    # ENV['LD'] and ENV['AR'].
+    # mruby's rake shells out commands unquoted through cmd.exe, so:
+    # - bare link.exe can resolve to a GNU coreutils `link` (bundled with Git
+    #   for Windows / RubyInstaller's MSYS) instead of the MSVC linker;
+    # - a quoted or spaced absolute path gets split at whitespace.
+    # Pin LD/AR to space-free 8.3 absolute paths (fall back to quoting when
+    # short names are disabled). CC stays a bare cl.exe: nothing shadows it,
+    # and setting CC would switch mruby's toolchain autodetection to gcc.
     if ($env:VCToolsInstallDir) {
       $hostArch = if ($env:VSCMD_ARG_HOST_ARCH) { $env:VSCMD_ARG_HOST_ARCH } else { "x64" }
       $tgtArch  = if ($env:VSCMD_ARG_TGT_ARCH)  { $env:VSCMD_ARG_TGT_ARCH }  else { "x64" }
       $vcBin = Join-Path $env:VCToolsInstallDir "bin\Host$hostArch\$tgtArch"
-      $linkExe = Join-Path $vcBin "link.exe"
-      $libExe = Join-Path $vcBin "lib.exe"
-      if (!(Test-Path $linkExe) -or !(Test-Path $libExe)) {
-        throw "MSVC tools not found under $vcBin (expected link.exe and lib.exe)"
+      $fso = New-Object -ComObject Scripting.FileSystemObject
+      $short = $fso.GetFolder($vcBin).ShortPath
+      if ($short -notlike "* *") {
+        $linkExe = Join-Path $short "link.exe"
+        $libExe = Join-Path $short "lib.exe"
+      } else {
+        $linkExe = '"{0}"' -f (Join-Path $vcBin "link.exe")
+        $libExe = '"{0}"' -f (Join-Path $vcBin "lib.exe")
       }
       $env:LD = $linkExe
       $env:AR = $libExe
