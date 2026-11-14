@@ -52,6 +52,29 @@ try {
   $cc = Resolve-CCompiler
   Write-Host "Using C compiler: $($cc.Exe)"
 
+  if ($cc.Name -eq "msvc") {
+    # GNU coreutils `link` (bundled with Git for Windows / RubyInstaller's
+    # MSYS) shadows MSVC link.exe during rake's PATH resolution, so pin the
+    # MSVC tools to absolute paths. mruby's visualcpp toolchain reads
+    # ENV['LD'] and ENV['AR'].
+    if ($env:VCToolsInstallDir) {
+      $hostArch = if ($env:VSCMD_ARG_HOST_ARCH) { $env:VSCMD_ARG_HOST_ARCH } else { "x64" }
+      $tgtArch  = if ($env:VSCMD_ARG_TGT_ARCH)  { $env:VSCMD_ARG_TGT_ARCH }  else { "x64" }
+      $vcBin = Join-Path $env:VCToolsInstallDir "bin\Host$hostArch\$tgtArch"
+      $linkExe = Join-Path $vcBin "link.exe"
+      $libExe = Join-Path $vcBin "lib.exe"
+      if (!(Test-Path $linkExe) -or !(Test-Path $libExe)) {
+        throw "MSVC tools not found under $vcBin (expected link.exe and lib.exe)"
+      }
+      $env:LD = $linkExe
+      $env:AR = $libExe
+      Write-Host "Pinned MSVC linker: $env:LD"
+      Write-Host "Pinned MSVC archiver: $env:AR"
+    } else {
+      Write-Warning "VCToolsInstallDir is not set; mruby will resolve link.exe from PATH and may pick up a GNU coreutils link"
+    }
+  }
+
   New-Item -ItemType Directory -Force (Split-Path $MrubyDir) | Out-Null
   if (Test-Path (Join-Path $MrubyDir ".git")) {
     Push-Location $MrubyDir

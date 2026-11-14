@@ -1,0 +1,7 @@
+# Normalize line endings: the Crystal formatter requires LF, and Windows
+# checkouts must not materialize CRLF for the files it checks.
+* text=auto
+*.cr text eol=lf
+*.c text eol=lf
+*.yml text eol=lf
+Makefile text eol=lf

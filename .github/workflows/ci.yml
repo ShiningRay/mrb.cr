@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir -p build
           gcc -I vendor/mruby/include -I vendor/mruby/build/host/include \
-            -o build/smoke scripts/c_smoke.c lib/mrb_shim.o lib/libmruby.a
+            -o build/smoke scripts/c_smoke.c lib/mrb_shim.o lib/libmruby.a -lm
           ./build/smoke
       - name: Examples
         run: make examples
@@ -80,7 +80,7 @@ jobs:
         run: |
           mkdir -p build
           gcc -I vendor/mruby/include -I vendor/mruby/build/host/include \
-            -o build/smoke scripts/c_smoke.c lib/mrb_shim.o lib/libmruby.a
+            -o build/smoke scripts/c_smoke.c lib/mrb_shim.o lib/libmruby.a -lm
           ./build/smoke
       - name: Examples
         shell: msys2 {0}
